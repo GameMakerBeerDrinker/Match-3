@@ -4,12 +4,12 @@ using UnityEngine;
 
 namespace _Scripts
 {
-    public class Gem
+    public class Gem: MonoBehaviour
     {
         public enum GemType
         {
-            None,
-            Red,
+            None=0,
+            Red=1,
             Orange,
             Yellow,
             Green,
@@ -47,7 +47,7 @@ namespace _Scripts
         public Vector2Int logicPos;
         public Vector3 worldPos;
         
-        public Gem()
+        /*public Gem()
         {
             gemType = 0;
             special = 0;
@@ -55,6 +55,6 @@ namespace _Scripts
             inMatrix = false;
             logicPos.Set(0, 0);
             worldPos.Set(0, 0, 0);
-        }
+        }*/
     }
 }

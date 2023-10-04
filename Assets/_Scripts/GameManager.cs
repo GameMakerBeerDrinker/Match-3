@@ -18,6 +18,8 @@ namespace _Scripts
 
         public static GameManager Instance;
 
+        public GameObject gemPrefab;
+
         public Gem[,] Gems;
 
         private int[,] _gemTypes;
@@ -137,7 +139,7 @@ namespace _Scripts
             {
                 for (int j = 0; j < N; j++)
                 {
-                    Gems[i, j] = new Gem();
+                    Gems[i, j] = Instantiate(gemPrefab).GetComponent<Gem>();
                     Gems[i, j].logicPos.Set(i, j);
                 }
             }

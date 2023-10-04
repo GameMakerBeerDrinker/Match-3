@@ -152,6 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6fe1bd63947128d4e9aa575c62c77b26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  gemPrefab: {fileID: 3346731906998641213, guid: 4aa23ec99f526b34a9a8f8b8c2ee803a, type: 3}
   gemCount: 0
   canMove: 1
 --- !u!4 &415819911
