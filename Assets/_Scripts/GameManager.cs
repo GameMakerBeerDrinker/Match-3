@@ -10,8 +10,8 @@ namespace _Scripts
 {
     public class GameManager : MonoBehaviour
     {
-        private const int ColumnAndRaw = 3;   //配置游戏的行列数（不包括边界）
-        private const int TypeCount = 4;   //配置宝石的种类数
+        private const int ColumnAndRaw = 8;   //配置游戏的行列数（不包括边界）
+        private const int TypeCount = 7;   //配置宝石的种类数
         
         private const int N = ColumnAndRaw + 2;
 
@@ -23,6 +23,8 @@ namespace _Scripts
         public Gem[,] Gems;
 
         private int[,] _gemTypes;
+
+        private int[,] _matchMatrix;
 
         public int gemCount;
 
@@ -49,22 +51,19 @@ namespace _Scripts
 
 
         /// <summary>
-        /// 交换两颗宝石，并判断是否为有效交换，有效则执行消除，无效则换回
+        /// 交换两颗宝石，并判断是否为有效交换
         /// </summary>
-        /// <param name="gem1"></param>
-        /// <param name="gem2"></param>
-        public void Swap(Gem gem1, Gem gem2) //Remove和Fall函数未完成，已注释掉
+        /// <param name="x1"></param>
+        /// <param name="y1"></param>
+        /// <param name="x2"></param>
+        /// <param name="y2"></param>
+        public void Swap(int x1,int y1,int x2,int y2) 
         {
-            if (!canMove)
+            /*if (!canMove)
             {
                 Debug.Log("动画阶段，无法移动");
                 return;
-            }
-
-            int x1 = gem1.logicPos.x;
-            int y1 = gem1.logicPos.y;
-            int x2 = gem2.logicPos.x;
-            int y2 = gem2.logicPos.y;
+            }*/
 
             if (!IsAdjacent(x1, y1, x2, y2))
             {
@@ -78,17 +77,18 @@ namespace _Scripts
 
             if (!(HasMatch(x1, y1) && HasMatch(x2, y2))) //判断是否为有效交换
             {
-                Debug.Log("无效交换，执行换回");
-                SwapBack(x1, y1, x2, y2); //这里需要等待交换的动画放完再换回
+                Debug.Log("无效交换，请换回");
                 return;
             }
 
-            do
+            Debug.Log("有效交换");
+            
+            /*do
             {
-                //Remove(SearchMatch());   //检测配对的宝石并消除,这里需要等待上一次消除掉落完毕
-                //Fall();   //宝石掉落填补空的位置
+                Remove(SearchMatch());   //检测配对的宝石并消除,这里需要等待上一次消除掉落完毕
+                Fall();   //宝石掉落填补空的位置
                 Debug.Log("消除一次");
-            } while (HasMatch());
+            } while (HasMatch());*/
         }
 
 
@@ -104,27 +104,6 @@ namespace _Scripts
         {
             return (Mathf.Abs(x1 - x2) == 1 && y1 == y2)
                    || (Mathf.Abs(y1 - y2) == 1 && x1 == x2);
-        }
-
-
-        /// <summary>
-        /// 仅交换两个相邻的宝石，用于无效交换后换回
-        /// </summary>
-        /// <param name="x1"></param>
-        /// <param name="y1"></param>
-        /// <param name="x2"></param>
-        /// <param name="y2"></param>
-        private void SwapBack(int x1, int y1, int x2, int y2)
-        {
-            if (!IsAdjacent(x1, y1, x2, y2))
-            {
-                Debug.Log("不能换回两个不相邻的宝石");
-                return;
-            }
-
-            Gem temp = Gems[x1, y1];
-            Gems[x1, y1] = Gems[x2, y2];
-            Gems[x2, y2] = temp;
         }
 
 
@@ -186,7 +165,7 @@ namespace _Scripts
         /// 判断当前盘面有无配对，时间复杂度 O(N²)
         /// </summary>
         /// <returns></returns>
-        private bool HasMatch()
+        public bool HasMatch()
         {
             Update_gemTypes();
 
@@ -245,7 +224,7 @@ namespace _Scripts
         /// <param name="x0"></param>
         /// <param name="y0"></param>
         /// <returns></returns>
-        private bool HasMatch(int x0, int y0)
+        public bool HasMatch(int x0, int y0)
         {
             Update_gemTypes();
 
@@ -483,7 +462,7 @@ namespace _Scripts
                 }
             }
             
-            Debug.Log(count);
+            Debug.Log("有效交换数"+count);
 
             return count;
         }
@@ -511,7 +490,7 @@ namespace _Scripts
         }*/
 
 
-        private void TestDisplay()
+        public void TestDisplay()
         {
             for (int i = 1; i < N - 1; i++)
             {
