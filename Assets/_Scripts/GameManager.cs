@@ -24,7 +24,7 @@ namespace _Scripts
 
         private int[,] _gemTypes;
 
-        private int[,] _matchMatrix;
+        private int[,] _matchMatrix;   //0为不消，1-7为对应颜色的宝石消
 
         public int gemCount;
 
@@ -41,12 +41,34 @@ namespace _Scripts
         private void Start()
         {
             NewGame();
+            //TestNewGame();
+            TestDisplay();
         }
 
 
+        private void TestNewGame()
+        {
+                Gems[1, 1].gemType = Gem.GemType.Red;
+                Gems[1, 2].gemType = Gem.GemType.Orange;
+                Gems[1, 3].gemType = Gem.GemType.Red;
+                Gems[2, 1].gemType = Gem.GemType.Red;
+                Gems[2, 2].gemType = Gem.GemType.Orange;
+                Gems[2, 3].gemType = Gem.GemType.Red;
+                Gems[3, 1].gemType = Gem.GemType.Orange;
+                Gems[3, 2].gemType = Gem.GemType.Orange;
+                Gems[3, 3].gemType = Gem.GemType.Orange;
+        }
+        
+        
         private void Update()
         {
-
+            /*if (Input.GetMouseButtonDown(1))
+            {
+                //Swap(1,1,1,2);
+                SearchMatch();
+                Remove();
+                Fall();
+            }*/
         }
 
 
@@ -71,10 +93,17 @@ namespace _Scripts
                 return;
             }
 
-            Gem temp = Gems[x1, y1];
+            Gem temp1 = Gems[x1, y1];
             Gems[x1, y1] = Gems[x2, y2];
-            Gems[x2, y2] = temp;
-
+            Gems[x2, y2] = temp1;
+            
+            /*Gem temp2 = Gems[x1, y1].GetComponent<Gem>();
+            Gems[x1, y1] = Gems[x2, y2].GetComponent<Gem>();   //另一种换法，区别是？
+            Gems[x2, y2] = temp2.GetComponent<Gem>();*/
+            
+            Debug.Log("交换后的盘面为");
+            TestDisplay();
+            
             if (!(HasMatch(x1, y1) && HasMatch(x2, y2))) //判断是否为有效交换
             {
                 Debug.Log("无效交换，请换回");
@@ -82,6 +111,8 @@ namespace _Scripts
             }
 
             Debug.Log("有效交换");
+            
+
             
             /*do
             {
@@ -114,12 +145,14 @@ namespace _Scripts
         {
             Gems = new Gem[N, N];
             _gemTypes = new int[N, N];
+            _matchMatrix = new int[N, N];
             for (int i = 0; i < N; i++)
             {
                 for (int j = 0; j < N; j++)
                 {
                     Gems[i, j] = Instantiate(gemPrefab).GetComponent<Gem>();
-                    Gems[i, j].logicPos.Set(i, j);
+                    Gems[i, j].gemType = Gem.GemType.Edge;
+                    //Gems[i, j].logicPos.Set(i, j);
                 }
             }
             
@@ -127,7 +160,7 @@ namespace _Scripts
             {
                 Refresh();
                 Debug.Log("生成一次盘面");
-                TestDisplay();
+                //TestDisplay();
             } while (HasMatch() || HasMove() == 0);
             
             //TestDisplay();
@@ -464,39 +497,122 @@ namespace _Scripts
             
             Debug.Log("有效交换数"+count);
 
-            return count;
+            return count; 
         }
 
-        /*
-        private Gem[] SearchMatch()
+        
+        public void SearchMatch()
         {
             Update_gemTypes();
+
+            _matchMatrixSetZero();
+            
+            for (int i = 1; i < N - 1; i++)
+            {
+                for (int j = 1; j < N - 1; j++)
+                {
+                    if (HasMatch(i, j))
+                    {
+                        _matchMatrix[i, j] = _gemTypes[i, j];
+                        
+                    }
+                    //Debug.Log(_matchMatrix[i, j]);
+                }
+            }
+            
+            
+        }
+
+
+        private void _matchMatrixSetZero()
+        {
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    _matchMatrix[i, j] = 0;
+                }
+            }
         }
 
 
         /// <summary>
-        /// 另外，需要完成计数
+        /// to-do：完成消除计数
         /// </summary>
         /// <param name="gems"></param>
-        private void Remove(Gem[] gems)
+        public void Remove()
         {
+            for (int i = 1; i < N - 1; i++)
+            {
+                for (int j = 1; j < N - 1; j++)
+                {
+                    if (_matchMatrix[i, j] > 0)
+                    {
+                        Gems[i, j].gemType = Gem.GemType.Empty;
+                    }
 
+                    //Debug.Log(Gems[i, j].gemType);
+                }
+            }
+            
+            _matchMatrixSetZero();
         }
 
 
-        private void Fall()
+        public void Fall()
         {
+            int[] emptyCount = new int[N];
+            
+            for (int i = 1; i < N - 1; i++)
+            {
+                for (int j = 1; j < N - 1; j++)
+                {
+                    if (Gems[i, j].gemType == Gem.GemType.Empty)
+                    {
+                        emptyCount[i]++;   //为每一列的空位计数
+                    }
+                }
+            }
 
-        }*/
+            for (int i = 1; i < N - 1; i++)   //遍历每一列
+            {
+                Debug.Log("第"+i+"列空位数："+emptyCount[i]);
+                if (emptyCount[i] == 0 || emptyCount[i] == N - 2)
+                {
+                    continue;   //如果没有空位或者全是空位，则到下一列
+                }
+                
+                for (int count = 0; count < emptyCount[i];)   //循环次数为空位的个数
+                {
+                    Debug.Log("处理第"+(count+1)+"个空位");
+                    for (int j = 1; j < N - 1; j++)
+                    {
+                        if (Gems[i, j].gemType == Gem.GemType.Empty)   //从下往上找到第一个空位
+                        {
+                            Debug.Log("找到了第" + (count + 1) + "个空位，在" + i + "," + j);
+                            for (int k = j; k < N - 2; k++)
+                            {
+                                Gem temp = Gems[i, k];
+                                Gems[i, k] = Gems[i, k + 1];
+                                Gems[i, k + 1] = temp;   //此空位上移至顶端，宝石和其它空位下移1格
+                                Debug.Log(i + "," + (k + 1) + "宝石掉落一格");
+                            }
+                            count++;
+                            break;   //一个空位已移除，跳到下一个空位
+                        }
+                    }
+                }
+            }
+            
+            TestDisplay();
+        }
 
 
         public void TestDisplay()
         {
-            for (int i = 1; i < N - 1; i++)
+            for (int i = 1; i < N-1 ; i++)
             {
                 Debug.Log("第"+i+"列");
                 
-                for (int j = 1; j < N - 1; j++)
+                for (int j = 1; j < N-1 ; j++)
                 {
                     Debug.Log(Gems[i, j].gemType);
                 }

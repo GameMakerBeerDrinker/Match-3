@@ -8,7 +8,8 @@ namespace _Scripts
     {
         public enum GemType
         {
-            None=0,
+            Edge=-1,
+            Empty=0,
             Red=1,
             Orange,
             Yellow,
