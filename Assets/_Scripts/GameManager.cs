@@ -724,19 +724,6 @@ namespace _Scripts
                 }
             }
             
-            
-            for (int i = 1; i < BoardLengthWithSides - 1; i++) {
-                for (int j = 1; j < BoardLengthWithSides - 1; j++) {
-                    if (Gems[i, j].gemType == Gem.GemType.Empty) {
-                        Destroy(Gems[i, j].gameObject);
-                        Gems[i, j] = Instantiate(gemPrefab, LogicPosToWorldPos(i, BoardLength + j),
-                            Quaternion.Euler(0, 0, 0));
-                        Gems[i,j].gemType = (Gem.GemType)Random.Range(1, GemTypeCount+1);
-                        Gems[i,j].RefreshGemType();
-                    }
-                }
-            }
-            
             //Refill game board, new gems are spawned upside of the board
             GetValidRefillBoard();
             for (int i = 1; i < BoardLengthWithSides - 1; i++) {
