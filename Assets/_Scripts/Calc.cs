@@ -13,14 +13,22 @@ namespace _Scripts {
         }
         
         public static bool Equal(this Vector3 argument1, Vector3 argument2) {
-            return Equal(argument1.x, argument2.x) &&
-                   Equal(argument1.y, argument2.y) &&
-                   Equal(argument1.z, argument2.z);
+            float x1 = argument1.x,
+                y1 = argument1.y,
+                z1 = argument1.z,
+                x2 = argument2.x,
+                y2 = argument2.y,
+                z2 = argument2.z;
+            return Equal(x1, x2) && Equal(y1, y2) && Equal(z1, z2);
         }
         public static bool Equal(this Vector3 argument1, Vector3 argument2, float epsilon) {
-            return Equal(argument1.x, argument2.x, epsilon) &&
-                   Equal(argument1.y, argument2.y, epsilon) &&
-                   Equal(argument1.z, argument2.z, epsilon);
+            float x1 = argument1.x,
+                y1 = argument1.y,
+                z1 = argument1.z,
+                x2 = argument2.x,
+                y2 = argument2.y,
+                z2 = argument2.z;
+            return Equal(x1, x2, epsilon) && Equal(y1, y2, epsilon) && Equal(z1, z2, epsilon);
         }
 
         public static Vector2 Deg2Dir(this float degree) {
@@ -131,6 +139,26 @@ namespace _Scripts {
             current.a = alpha;
             return current;
         }
+
+        #region SetVector
         
+        public static Vector3 SetX(this Vector3 v3, float x) {
+            return new Vector3(x, v3.y, v3.z);
+        }
+        public static Vector3 SetY(this Vector3 v3, float y) {
+            return new Vector3(v3.x, y, v3.z);
+        }
+        public static Vector3 SetZ(this Vector3 v3, float z) {
+            return new Vector3(v3.x, v3.y, z);
+        }
+        
+        public static Vector2 SetX(this Vector2 v2, float x) {
+            return new Vector2(x, v2.y);
+        }
+        public static Vector2 SetY(this Vector2 v2, float y) {
+            return new Vector2(v2.x, y);
+        }
+        
+        #endregion
     }
 }

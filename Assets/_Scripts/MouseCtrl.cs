@@ -29,6 +29,6 @@ public class MouseCtrl : MonoBehaviour {
         transform.position = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         transform.position = new Vector3(transform.position.x, transform.position.y, -5);
         
-        curLogicPos = GameManager.Manager.WorldPosToLogicPos(transform.position);
+        curLogicPos = GameManager.WorldPosToLogicPos(transform.position);
     }
 }

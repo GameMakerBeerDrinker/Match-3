@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
 using Random = UnityEngine.Random;
 
 namespace _Scripts
@@ -70,20 +72,23 @@ namespace _Scripts
         public int swapDir;
         
         public Vector2Int[] dir;
-        private void Update() {
+        public float globalApproachSpd;
+        public float globalEpsilon;
+
+        private void LateUpdate() {
             curMouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             curMouseWorldPos = new Vector3(curMouseWorldPos.x, curMouseWorldPos.y, -5);
             curMouseLogicPos = WorldPosToLogicPos(curMouseWorldPos);
-            
+
             switch (gameState) {
                 case GameState.Waiting:
                     ChangeGemTarScale(curMouseLogicPos, 0.5f);
                     if (Input.GetMouseButtonDown(0)) {
+                        PrintCurrentBoard();
                         gameState = GameState.Selecting;
                         inSwapPos = curMouseWorldPos;
                     }
                     break;
-                
                 case GameState.Selecting:
                     swapPointer = (Vector2)curMouseWorldPos - inSwapPos;
                     if (Input.GetMouseButtonUp(0)) {
@@ -102,22 +107,20 @@ namespace _Scripts
                     if (swapDir != -1) {
                         swapBeg = WorldPosToLogicPos(inSwapPos);
                         swapTar = swapBeg + dir[swapDir];
+                        SetGemSwapTarget(swapBeg,swapTar);
+                        SetGemSwapTarget(swapTar,swapBeg);
                         gameState = GameState.Swapping;
                         swapDir = -1;
                     }
                     break;
-                
-                case GameState.Swapping:
-                    GetGemFromLogicPos(swapBeg).transform.position
-                        = GetGemFromLogicPos(swapBeg).transform.position
-                            .ApproachValue(LogicPosToWorldPos(swapTar), 64f * Vector3.one);
-                    
-                    GetGemFromLogicPos(swapTar).transform.position
-                        = GetGemFromLogicPos(swapTar).transform.position
-                            .ApproachValue(LogicPosToWorldPos(swapBeg), 64f * Vector3.one);
+            }
+        }
 
-                    if (GetGemFromLogicPos(swapBeg).transform.position.Equal(LogicPosToWorldPos(swapTar),0.01f) &&
-                        GetGemFromLogicPos(swapTar).transform.position.Equal(LogicPosToWorldPos(swapBeg),0.01f)) {
+        private void FixedUpdate() {
+            switch (gameState) {
+                case GameState.Swapping:
+                    if (GetGemFromLogicPos(swapBeg).transform.position.Equal(LogicPosToWorldPos(swapTar),0.2f) &&
+                        GetGemFromLogicPos(swapTar).transform.position.Equal(LogicPosToWorldPos(swapBeg),0.2f)) {
                         Swap(swapBeg,swapTar);
                         if (HasMatch()) {
                             SearchMatch();
@@ -126,11 +129,19 @@ namespace _Scripts
                         }
                         else {
                             Swap(swapBeg,swapTar);
+                            SetGemSwapTarget(swapBeg,swapTar);
+                            SetGemSwapTarget(swapTar,swapBeg);
                             gameState = GameState.ReSwapping;
                         }
                     }
                     break;
                 
+                case GameState.ReSwapping:
+                    if (GetGemFromLogicPos(swapBeg).transform.position.Equal(LogicPosToWorldPos(swapBeg), globalEpsilon) &&
+                        GetGemFromLogicPos(swapTar).transform.position.Equal(LogicPosToWorldPos(swapTar), globalEpsilon)) {
+                        gameState = GameState.Waiting;
+                    }
+                    break;
                 case GameState.Matching:
                     if (IfAllGemsRemoved()) {
                         LogicFallAndRefill();
@@ -138,23 +149,7 @@ namespace _Scripts
                     }
                     break;
                 
-                case GameState.ReSwapping:
-                    GetGemFromLogicPos(swapBeg).transform.position
-                        = GetGemFromLogicPos(swapBeg).transform.position
-                            .ApproachValue(LogicPosToWorldPos(swapBeg), 64f * Vector3.one);
-                    
-                    GetGemFromLogicPos(swapTar).transform.position
-                        = GetGemFromLogicPos(swapTar).transform.position
-                            .ApproachValue(LogicPosToWorldPos(swapTar), 64f * Vector3.one);
-
-                    if (GetGemFromLogicPos(swapBeg).transform.position.Equal(LogicPosToWorldPos(swapBeg),0.01f) &&
-                        GetGemFromLogicPos(swapTar).transform.position.Equal(LogicPosToWorldPos(swapTar), 0.01f)) {
-                        gameState = GameState.Waiting;
-                    }
-                    break;
-                
                 case GameState.Falling:
-                    AnimateFall();
                     if (IfAllGemsInPosition()) {
                         if (HasMatch()) {
                             SearchMatch();
@@ -186,6 +181,20 @@ namespace _Scripts
             return (int)d;
         }
 
+        public void SetGemSwapTarget(Vector2Int p, Vector2Int q) {
+            GetGemFromLogicPos(p).tarLogicPos = q;
+            GetGemFromLogicPos(p).gemState = GemState.Swapping;
+        }
+        
+        public void SetGemFallTarget(Vector2Int p, Vector2Int q) {
+            GetGemFromLogicPos(p).tarLogicPos = q;
+            GetGemFromLogicPos(p).gemState = GemState.Falling;
+        }
+
+        public void SetGemFallTarget(int x1, int y1, int x2, int y2) {
+            SetGemFallTarget(new Vector2Int(x1,y1),new Vector2Int(x2,y2));
+        }
+
         public Gem GetGemFromLogicPos(Vector2Int p) {
             return Gems[p.x, p.y];
         }
@@ -198,8 +207,8 @@ namespace _Scripts
         public bool IsValidGem(Vector2Int p) {
             if (p.x <= 0 || p.x >= 9 || p.y <= 0 || p.y >= 9)
                 return false;
-            return (Gems[p.x, p.y].gemType != Gem.GemType.Empty
-                    && Gems[p.x, p.y].gemType != Gem.GemType.Edge);
+            return (Gems[p.x, p.y].gemType != GemType.Empty
+                    && Gems[p.x, p.y].gemType != GemType.Edge);
         }
 
         public void Swap(Vector2Int p, int d) {
@@ -223,8 +232,8 @@ namespace _Scripts
                 return;
             }
 
-            Gems[x1, y1].logicPos.Set(x2, y2);
-            Gems[x2, y2].logicPos.Set(x1, y1);
+            Gems[x1, y1].curLogicPos.Set(x2, y2);
+            Gems[x2, y2].curLogicPos.Set(x1, y1);
             (Gems[x1, y1], Gems[x2, y2]) = (Gems[x2, y2], Gems[x1, y1]);
             
             UpdateGemTypeOnBoard();
@@ -241,7 +250,7 @@ namespace _Scripts
         public bool IfAllGemsInPosition() {
             for (int i = 1; i <= BoardLength; i++) {
                 for (int j = 1; j <= BoardLength; j++) {
-                    if(!Gems[i,j].transform.position.Equal(LogicPosToWorldPos(i,j),0.01f))
+                    if(!Gems[i,j].transform.position.Equal(LogicPosToWorldPos(i,j),0.3f))
                         return false;
                 }
             }
@@ -260,7 +269,7 @@ namespace _Scripts
             for (int i = 0; i < BoardLengthWithSides; i++) {
                 for (int j = 0; j < BoardLengthWithSides; j++) {
                     Gems[i, j] = Instantiate(gemPrefab);
-                    Gems[i, j].gemType = Gem.GemType.Edge;
+                    Gems[i, j].gemType = GemType.Edge;
                 }
             }
             
@@ -271,7 +280,7 @@ namespace _Scripts
                 for (int j = 0; j < BoardLengthWithSides; j++) {
                     Gems[i, j].RefreshGemType();
                     Gems[i, j].transform.position = new Vector3(i - 4.5f, j - 4.5f,0);
-                    Gems[i, j].logicPos.Set(i, j);
+                    Gems[i, j].curLogicPos.Set(i, j);
                 }
             }
         }
@@ -279,7 +288,7 @@ namespace _Scripts
         private void GetRandomGameBoard() {
             for (int i = 1; i < BoardLengthWithSides - 1; i++) {
                 for (int j = 1; j < BoardLengthWithSides - 1; j++) {
-                    Gems[i, j].gemType = (Gem.GemType)Random.Range(1, GemTypeCount+1);
+                    Gems[i, j].gemType = (GemType)Random.Range(1, GemTypeCount+1);
                 }
             }
         }
@@ -294,23 +303,23 @@ namespace _Scripts
                    || (Mathf.Abs(y1 - y2) == 1 && x1 == x2);
         }
         
-        public Vector3 LogicPosToWorldPos(int i, int j) {
+        public static Vector3 LogicPosToWorldPos(int i, int j) {
             return new Vector3(i - 4.5f, j - 4.5f, 0);
         }
         
-        public Vector3 LogicPosToWorldPos(Vector2Int p) {
+        public static Vector3 LogicPosToWorldPos(Vector2Int p) {
             return new Vector3(p.x - 4.5f, p.y - 4.5f, 0);
         }
 
-        public Vector2Int WorldPosToLogicPos(Vector3 pos) {
+        public static Vector2Int WorldPosToLogicPos(Vector3 pos) {
             return new Vector2Int(Mathf.FloorToInt(pos.x + 5f), Mathf.FloorToInt(pos.y + 5f));
         }
 
-        public bool IsLogicPosValid(Vector2Int pos) {
+        public static bool IsLogicPosValid(Vector2Int pos) {
             return pos.x is >= 1 and <= 8 && pos.y is >= 1 and <= 8;
         }
         
-        public bool IsLogicPosValid(int x,int y) {
+        public static bool IsLogicPosValid(int x,int y) {
             return x is >= 1 and <= 8 && y is >= 1 and <= 8;
         }
 
@@ -471,7 +480,7 @@ namespace _Scripts
                 int count = 1;
                 for (int j = 2; j < BoardLengthWithSides - 1; j++)
                 {
-                    if (temp == gemTypes[i, j])
+                    if (temp == gemTypes[i, j] && temp != 0)
                     {
                         count++;
                         if (count == 3)
@@ -484,6 +493,7 @@ namespace _Scripts
                         count = 1;
                         temp = gemTypes[i, j];
                     }
+
                 }
             }
 
@@ -494,7 +504,7 @@ namespace _Scripts
                 int count = 1;
                 for (int i = 2; i < BoardLengthWithSides - 1; i++)
                 {
-                    if (temp == gemTypes[i, j])
+                    if (temp == gemTypes[i, j] && temp != 0)
                     {
                         count++;
                         if (count == 3)
@@ -668,7 +678,7 @@ namespace _Scripts
                 //string str = " ";
                 for (int j = 1; j < BoardLengthWithSides - 1; j++) {
                     if (_matchMatrix[i, j] > 0) {
-                        Gems[i, j].gemType = Gem.GemType.Empty;
+                        Gems[i, j].gemType = GemType.Empty;
                         matchedGemsCount++;
                     }
 
@@ -678,13 +688,15 @@ namespace _Scripts
             }
             matchedGemsCountText.text = "Gems You Matched:\n" +
                                         "<size=24>" + matchedGemsCount + "</size>";
+            
+            PrintCurrentBoard();
         }
 
         public bool IfAllGemsRemoved() {
             for (int i = 1; i < BoardLengthWithSides - 1; i++) {
                 for (int j = 1; j < BoardLengthWithSides - 1; j++) {
                     if (_matchMatrix[i, j] > 0) {
-                        if (!Gems[i, j].curScale.Equal(0f, 0.01f)) {
+                        if (!Gems[i, j].curScale.Equal(0f, 0.4f)) {
                             return false;
                         }
                     }
@@ -694,16 +706,16 @@ namespace _Scripts
         }
         
         public void LogicFallAndRefill() {
-            int[] emptyCount = new int[BoardLengthWithSides];
+            /*int[] emptyCount = new int[BoardLengthWithSides];
             
             for (int i = 1; i < BoardLengthWithSides - 1; i++) {
                 for (int j = 1; j < BoardLengthWithSides - 1; j++) {
-                    if (Gems[i, j].gemType == Gem.GemType.Empty) {
+                    if (Gems[i, j].gemType == GemType.Empty) {
                         emptyCount[i]++;   //为每一列的空位计数
                     }
                 }
             }
-
+        
             for (int i = 1; i < BoardLengthWithSides - 1; i++) {  //遍历每一列{
                 //Debug.Log("第"+i+"列空位数："+emptyCount[i]);
                 if (emptyCount[i] == 0 || emptyCount[i] == BoardLengthWithSides - 2) continue;   
@@ -711,7 +723,7 @@ namespace _Scripts
                 for (int count = 0; count < emptyCount[i];){   //循环次数为空位的个数
                     //Debug.Log("处理第"+(count+1)+"个空位");
                     for (int j = 1; j < BoardLengthWithSides - 1; j++) {
-                        if (Gems[i, j].gemType == Gem.GemType.Empty){   //从下往上找到第一个空位
+                        if (Gems[i, j].gemType == GemType.Empty){   //从下往上找到第一个空位
                             //Debug.Log("找到了第" + (count + 1) + "个空位，在" + i + "," + j);
                             for (int k = j; k < BoardLengthWithSides - 2; k++) {
                                 (Gems[i, k], Gems[i, k + 1]) = (Gems[i, k + 1], Gems[i, k]);
@@ -722,21 +734,53 @@ namespace _Scripts
                         }
                     }
                 }
+            }*/
+
+            Queue<int> fallQueue = new Queue<int>();
+            for (int i = 1; i <= BoardLength; i++) {
+                fallQueue.Clear();
+                for (int j = 1; j <= BoardLength; j++) {
+                    if(Gems[i,j].gemType != GemType.Empty)
+                        fallQueue.Enqueue(j);
+                }
+
+                var emptyCount = BoardLength - fallQueue.Count;
+                if (emptyCount == 0 || emptyCount == BoardLength) continue;
+                for (int curHeight = 1; fallQueue.Count > 0; curHeight++) {
+                    var oriHeight = fallQueue.Dequeue();
+                    if (curHeight != oriHeight) {
+                        SetGemFallTarget(i, oriHeight, i, curHeight);
+                        (Gems[i, curHeight], Gems[i, oriHeight]) = (Gems[i, oriHeight], Gems[i, curHeight]);
+                    }
+                }
             }
+            PrintCurrentBoard();
             
             //Refill game board, new gems are spawned upside of the board
             GetValidRefillBoard();
             for (int i = 1; i < BoardLengthWithSides - 1; i++) {
                 for (int j = 1; j < BoardLengthWithSides - 1; j++) {
-                    if (Gems[i, j].gemType == Gem.GemType.Empty) {
-                        Destroy(Gems[i, j].gameObject);
+                    if (Gems[i, j].gemType == GemType.Empty) {
                         Gems[i, j] = Instantiate(gemPrefab, LogicPosToWorldPos(i, BoardLength + j),
                             Quaternion.Euler(0, 0, 0));
-                        Gems[i, j].gemType = (Gem.GemType)_refillBoard[i, j];
+                        Gems[i, j].gemType = (GemType)_refillBoard[i, j];
                         Gems[i, j].RefreshGemType();
+                        SetGemFallTarget(new Vector2Int(i,j), new Vector2Int(i,j));
                     }
                 }
             }
+            PrintCurrentBoard();
+        }
+
+        public void PrintCurrentBoard() {
+            string str = "";
+            for (int i = BoardLength; i >= 1; i--) {
+                for (int j = 1; j <= BoardLength; j++) {
+                    str += (int)Gems[j, i].gemType + "  ";
+                }
+                str += "\n";
+            }
+            Debug.Log(str);
         }
         
         private int[,] _refillBoard;
@@ -754,23 +798,12 @@ namespace _Scripts
             do {
                 for (int i = 1; i < BoardLengthWithSides - 1; i++) {
                     for (int j = 1; j < BoardLengthWithSides - 1; j++) {
-                        if (Gems[i, j].gemType == Gem.GemType.Empty) {
+                        if (Gems[i, j].gemType == GemType.Empty) {
                             _refillBoard[i, j] = Random.Range(1, GemTypeCount + 1);
                         }
                     }
                 }
-            } while (!HasMatch(_refillBoard));
-        }
-
-        public void AnimateFall() {
-            for (int i = 1; i < BoardLengthWithSides - 1; i++) {
-                for (int j = 1; j < BoardLengthWithSides - 1; j++) {
-                    if (Gems[i, j] != null) {
-                        Gems[i, j].transform.position = Gems[i, j].transform.position
-                            .ApproachValue(LogicPosToWorldPos(i, j), 64f * Vector3.one);
-                    }
-                }
-            }
+            } while (HasMatch(_refillBoard));
         }
 
 
@@ -786,8 +819,5 @@ namespace _Scripts
                 }
             }
         }
-        
-        
-        
     }
 }

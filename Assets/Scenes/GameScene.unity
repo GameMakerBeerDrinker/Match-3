@@ -411,6 +411,8 @@ MonoBehaviour:
   - {x: 1, y: 0}
   - {x: 0, y: -1}
   - {x: -1, y: 0}
+  globalApproachSpd: 16
+  globalEpsilon: 0.01
 --- !u!224 &1412129331
 RectTransform:
   m_ObjectHideFlags: 0
