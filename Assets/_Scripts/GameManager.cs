@@ -208,7 +208,7 @@ namespace _Scripts
                 int count = 1;
                 for (int j = 2; j < N - 1; j++)
                 {
-                    if (temp == _gemTypes[i, j])
+                    if (temp == _gemTypes[i, j] && temp != 0)
                     {
                         count++;
                         if (count == 3)
@@ -231,7 +231,7 @@ namespace _Scripts
                 int count = 1;
                 for (int i = 2; i < N - 1; i++)
                 {
-                    if (temp == _gemTypes[i, j])
+                    if (temp == _gemTypes[i, j] && temp != 0)
                     {
                         count++;
                         if (count == 3)
@@ -259,7 +259,17 @@ namespace _Scripts
         /// <returns></returns>
         public bool HasMatch(int x0, int y0)
         {
+<<<<<<< Updated upstream
             Update_gemTypes();
+=======
+            if (Gems[x0, y0].gemType == GemType.Empty)
+            {
+                Debug.Log("传入了空位");
+                return false;
+            }
+            
+            UpdateGemTypeOnBoard();
+>>>>>>> Stashed changes
 
             int x = x0;
             int y = y0;
@@ -382,6 +392,12 @@ namespace _Scripts
         /// <returns></returns>
         private bool HasMatch(int[,] gemTypes, int x0, int y0)
         {
+            if (gemTypes[x0, y0] == 0)
+            {
+                Debug.Log("传入的矩阵中此位为空位");
+                return false;
+            }
+
             int x = x0;
             int y = y0;
             int count = 0;
