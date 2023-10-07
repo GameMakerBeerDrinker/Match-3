@@ -84,7 +84,6 @@ namespace _Scripts
                 case GameState.Waiting:
                     ChangeGemTarScale(curMouseLogicPos, 0.5f);
                     if (Input.GetMouseButtonDown(0)) {
-                        PrintCurrentBoard();
                         gameState = GameState.Selecting;
                         inSwapPos = curMouseWorldPos;
                     }
@@ -107,9 +106,11 @@ namespace _Scripts
                     if (swapDir != -1) {
                         swapBeg = WorldPosToLogicPos(inSwapPos);
                         swapTar = swapBeg + dir[swapDir];
-                        SetGemSwapTarget(swapBeg,swapTar);
-                        SetGemSwapTarget(swapTar,swapBeg);
-                        gameState = GameState.Swapping;
+                        if (IsLogicPosValid(swapBeg) && IsLogicPosValid(swapTar)) {
+                            SetGemSwapTarget(swapBeg, swapTar);
+                            SetGemSwapTarget(swapTar, swapBeg);
+                            gameState = GameState.Swapping;
+                        }
                         swapDir = -1;
                     }
                     break;
@@ -121,24 +122,25 @@ namespace _Scripts
                 case GameState.Swapping:
                     if (GetGemFromLogicPos(swapBeg).transform.position.Equal(LogicPosToWorldPos(swapTar),0.2f) &&
                         GetGemFromLogicPos(swapTar).transform.position.Equal(LogicPosToWorldPos(swapBeg),0.2f)) {
+                        
                         Swap(swapBeg,swapTar);
                         if (HasMatch()) {
                             SearchMatch();
                             RemoveMatchedGems();
                             gameState = GameState.Matching;
-                        }
-                        else {
+                        } else {
                             Swap(swapBeg,swapTar);
-                            SetGemSwapTarget(swapBeg,swapTar);
-                            SetGemSwapTarget(swapTar,swapBeg);
+                            SetGemSwapTarget(swapBeg,swapBeg);
+                            SetGemSwapTarget(swapTar,swapTar);
                             gameState = GameState.ReSwapping;
                         }
+                        
                     }
                     break;
                 
                 case GameState.ReSwapping:
-                    if (GetGemFromLogicPos(swapBeg).transform.position.Equal(LogicPosToWorldPos(swapBeg), globalEpsilon) &&
-                        GetGemFromLogicPos(swapTar).transform.position.Equal(LogicPosToWorldPos(swapTar), globalEpsilon)) {
+                    if (GetGemFromLogicPos(swapBeg).transform.position.Equal(LogicPosToWorldPos(swapBeg), 0.2f) &&
+                        GetGemFromLogicPos(swapTar).transform.position.Equal(LogicPosToWorldPos(swapTar), 0.2f)) {
                         gameState = GameState.Waiting;
                     }
                     break;
