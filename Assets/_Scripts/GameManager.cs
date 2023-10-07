@@ -357,7 +357,7 @@ namespace _Scripts
                 int count = 1;
                 for (int j = 2; j < BoardLengthWithSides - 1; j++)
                 {
-                    if (temp == _gemTypes[i, j])
+                    if (temp == _gemTypes[i, j] && temp != 0)
                     {
                         count++;
                         if (count == 3)
@@ -380,7 +380,7 @@ namespace _Scripts
                 int count = 1;
                 for (int i = 2; i < BoardLengthWithSides - 1; i++)
                 {
-                    if (temp == _gemTypes[i, j])
+                    if (temp == _gemTypes[i, j] && temp != 0)
                     {
                         count++;
                         if (count == 3)
@@ -405,6 +405,12 @@ namespace _Scripts
         /// </summary>
         public bool HasMatch(int x0, int y0)
         {
+            if (Gems[x0, y0].gemType == GemType.Empty)
+            {
+                Debug.Log("传入了空位");
+                return false;
+            }
+            
             UpdateGemTypeOnBoard();
 
             int x = x0;
@@ -533,6 +539,12 @@ namespace _Scripts
         /// <returns></returns>
         private bool HasMatch(int[,] gemTypes, int x0, int y0)
         {
+            if (Gems[x0, y0].gemType == GemType.Empty)
+            {
+                Debug.Log("传入的矩阵中此位为空位");
+                return false;
+            }
+            
             int x = x0;
             int y = y0;
             int count = 0;
